@@ -10,7 +10,7 @@ def centerWindow(self):
 		sh = self.winfo_screenheight()
 
 		x = (sw - w)/2
-		y = (sh - h)/2
+		y = (sh - h)/2-100
 		self.geometry('%dx%d+%d+%d' % (w, h, x, y))
 
 
