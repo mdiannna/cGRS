@@ -13,13 +13,8 @@ SAMPLES = 10
 if __name__ == "__main__":
 	command = sys.argv[2]
 	com_port = sys.argv[1]
-	try:
-		server = sys.argv[3]
-	except:
-		server = "ws://localhost:5000/echo"
 
 	init_GRS(com_port, server)
-	init_server(server)
 
 	for i in range(0, SAMPLES):
 		gest = recogGest()
@@ -29,7 +24,6 @@ if __name__ == "__main__":
 			click(10, 10)
 		time.sleep(2)
 
-	stop_server_conn()
 	stop_serial_conn()
 
 
