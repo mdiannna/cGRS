@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
 	for i in range(0, SAMPLES):
 		gest = recogGest()
-		print "!!!!!!!!!!!   " + gest
+		print "----- Recognized gesture:  " + gest
 		if gest == "click":
 			print "click"
 			click(10, 10)
