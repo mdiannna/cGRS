@@ -1,5 +1,5 @@
 # GRS
-This is Version 2.0 of cGRS and version 1.0 of grslib
+This is Version 2.0 of cGRS(customizable Gesture Recognition System) and version 1.0 of grslib
 
 grslib - library for reading and operating with sensor data. It also offers the possibility to send data to a server using websockets
 
