@@ -5,3 +5,4 @@ GUI_v2_archive.py
 *.pyc
 README
 useful_links.txt
+thread.py

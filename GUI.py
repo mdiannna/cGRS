@@ -2,6 +2,8 @@
 import Tkinter as tk
 from Tkinter import *
 import time
+import threading
+import atexit
 
 TITLE_FONT = ("Helvetica", 18, "bold")
 
@@ -49,9 +51,10 @@ class SampleApp(tk.Tk):
         frame.tkraise()
 
 
-class AddGest(tk.Frame):
 
+class AddGest(tk.Frame):
     def __init__(self, parent, controller):
+
         tk.Frame.__init__(self, parent, bg="white")
         self.controller = controller
        
@@ -82,18 +85,25 @@ class AddGest(tk.Frame):
             font=("Helvetica", 14), background="white", fg="#727272", pady=20)
         label_status.grid(row=3, columnspan=14, sticky=N+W+E)
 
-
+       
         def in_progress():
             label_status.configure(text="Înregistrare în proces...  Nu mișcați mîna pe durata înregistrarii")
             label_status.configure(fg="#727272")
             label_status.update_idletasks()
+
+
 
         def done(gest_name):
             label_status.configure(text="Gestul " + gest_name + " a fost înregistrat cu succes! ")
             label_status.configure(fg="#D32F2F")
             label_status.update_idletasks()
 
+
         def callback():
+            global stopFlag
+            global exitFlag
+            stopFlag = 1
+            exitFlag = 1
             gest_name = entry_gest_name.get()   
             print "Numele gestului:" + gest_name
             if gest_name:
@@ -112,14 +122,49 @@ class AddGest(tk.Frame):
             background="#F44336",fg="white", activebackground="#D32F2F", activeforeground="white")
         btn_ok.grid(row=1, column=8, sticky=W)
 
+        def changeFrame():
+            stopFlag = 1
+            exitFlag = 1
+            controller.show_frame(RecogGest)
+
         btn_recog = Button(self, text="Recunoașterea gesturilor", font=("Helvetica", 14),
             background="#F44336",fg="white", activebackground="#D32F2F", activeforeground="white",
-            command=lambda: controller.show_frame(RecogGest))
+            command=changeFrame)
         btn_recog.grid(row=4, column=7, sticky=W+E)
 
 
-class RecogGest(tk.Frame):
+exitFlag = 0
+stopFlag = 1
+Diana = "Diaa=naa"
 
+
+class myThread (threading.Thread):
+    def __init__(self, threadID, name, counter):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+        self.counter = counter
+    def run(self):
+        global Diana
+        Diana = str(Diana) + self.name
+        print "Starting " + self.name + Diana
+        recognition(self.name, self.counter, 5)
+        
+        print "Exiting " + self.name
+
+def recognition(threadName, delay, counter):
+    global Diana
+    while not exitFlag:
+        if exitFlag:
+            threadName.exit()
+        Diana = counter
+        # box.insert(0, Diana)
+        time.sleep(0.5)
+        print "%s: %s" % (threadName, time.ctime(time.time()))
+        counter -= 1
+
+
+class RecogGest(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
@@ -142,20 +187,42 @@ class RecogGest(tk.Frame):
         # print self.winfo_width
 
         label_name.grid(row=0, sticky=W+E, columnspan=12)
+    
 
-        recog_box = Listbox(self)
+        self.recog_box = Listbox(self)
+        recog_box = self.recog_box
+
+        # self.recog_box.after(5, updateGUI(self))
         # recog_box.insert("Diana")
-        recog_box.grid(rowspan=4, column=0, columnspan=12, pady=20, padx=30, sticky=W+E)
+        self.recog_box.grid(rowspan=4, column=0, columnspan=12, pady=20, padx=30, sticky=W+E)
+        self.listenID = self.after(1000, self.run)
 
-        def start_recognition():
-            gest_name = "Diana "
-            print "Start Recognition" 
+        
+
+        def start_recognition(): 
+            global exitFlag
+            global stopFlag
+            stopFlag = 0
+            # AddGest.helloFromOtherClass()
+            gest_name = str(Diana)
+
+            print "Start Recognition"  + str(Diana)
             recog_box.insert(0, "Gestul:      ---   " + gest_name + "   ---   " + "  recunoscut la ora: " + str(time.strftime('%X')))
             recog_box.update_idletasks()
+             # # Create new threads
+            exitFlag = 0
+            thread1 = myThread(1, "Thread-1", 7)
+            thread1.start()
+            
+            
 
             # !!!!!!!!11 Nu uita sa faci uncomment
             # recogGest(gest_name)
         def stop_recognition():
+            global exitFlag
+            global stopFlag
+            stopFlag = 1
+            exitFlag = 1
             print "Stop Recognition" 
             recog_box.insert(0, "Stop")
             recog_box.update_idletasks()
@@ -170,11 +237,29 @@ class RecogGest(tk.Frame):
             background="#F44336",fg="white", activebackground="#D32F2F", activeforeground="white")
         btn_stop.grid(row=5, column=6, sticky=W+E)
 
+        def changeFrame():
+            global stopFlag
+            global exitFlag
+            stopFlag = 1
+            exitFlag = 1
+            controller.show_frame(AddGest)
 
         btn_recog = Button(self, text="Înregistrarea gesturilor", font=("Helvetica", 14),
             background="#F44336",fg="white", activebackground="#D32F2F", activeforeground="white",
-            command=lambda: controller.show_frame(AddGest))
+            command=changeFrame)
         btn_recog.grid(row=6, column=3, rowspan=4, columnspan=6, sticky=W+E)
+
+        
+
+    def run(self):
+        if stopFlag == 0:
+            self.recog_box.insert(0, "Gestul:      ---   " + str(Diana) + "   ---   " + "  recunoscut la ora: " + str(time.strftime('%X')))
+            self.recog_box.update_idletasks()
+        self.listenID = self.after(1000, self.run)
+
+    def quit(self):
+        self.root.destroy()
+        exitFlag = 1
 
 
 class PageTwo(tk.Frame):
@@ -191,5 +276,11 @@ class PageTwo(tk.Frame):
 
 if __name__ == "__main__":
     app = SampleApp()
+
+    def onExit():
+                exitFlag = 0
+                print "exited"
+                app.destroy()
+    app.protocol('WM_DELETE_WINDOW', onExit) 
 
     app.mainloop()
