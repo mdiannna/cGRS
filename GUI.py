@@ -4,8 +4,11 @@ from Tkinter import *
 import time
 import threading
 import atexit
+from grsNN import recogGest, trainGest
+from grslib import *
 
 TITLE_FONT = ("Helvetica", 18, "bold")
+
 
 class SampleApp(tk.Tk):
     def __init__(self, *args, **kwargs):
@@ -58,12 +61,12 @@ class AddGest(tk.Frame):
         tk.Frame.__init__(self, parent, bg="white")
         self.controller = controller
        
-        p = PhotoImage(file="bg.png")
-        p['width'] = self.winfo_screenwidth()+199
-        p['height'] = self.winfo_screenheight()+1990
+        # p = PhotoImage(file="bg.png")
+        # p['width'] = self.winfo_screenwidth()+199
+        # p['height'] = self.winfo_screenheight()+1990
 
 
-        l = Label(self, image=p, background="white")
+        l = Label(self, background="white")
         l.pack(fill=BOTH, expand=YES)
         l.place(x=0, y=-50, width=self.winfo_screenwidth(), height=self.winfo_screenheight(), anchor="nw")
 
@@ -86,10 +89,11 @@ class AddGest(tk.Frame):
         label_status.grid(row=3, columnspan=14, sticky=N+W+E)
 
        
-        def in_progress():
-            label_status.configure(text="Înregistrare în proces...  Nu mișcați mîna pe durata înregistrarii")
+        def in_progress(gest_name):
+            label_status.configure(text="Înregistrare în proces...  Nu mişcaţi mîna pe durata înregistrarii")
             label_status.configure(fg="#727272")
             label_status.update_idletasks()
+            trainGest(gest_name)
 
 
 
@@ -107,8 +111,8 @@ class AddGest(tk.Frame):
             gest_name = entry_gest_name.get()   
             print "Numele gestului:" + gest_name
             if gest_name:
-                in_progress()
-                time.sleep(3)
+                in_progress(gest_name)
+                # time.sleep(3)
                 done(gest_name) 
                 # !!!!!!!!11 Nu uita sa faci uncomment
                 # trainGest(gest_name)
@@ -146,7 +150,7 @@ class myThread (threading.Thread):
         self.counter = counter
     def run(self):
         global Diana
-        Diana = str(Diana) + self.name
+        Diana = recogGest()
         print "Starting " + self.name + Diana
         recognition(self.name, self.counter, 5)
         
@@ -157,7 +161,7 @@ def recognition(threadName, delay, counter):
     while not exitFlag:
         if exitFlag:
             threadName.exit()
-        Diana = counter
+        Diana = recogGest()
         # box.insert(0, Diana)
         time.sleep(0.5)
         print "%s: %s" % (threadName, time.ctime(time.time()))
@@ -170,12 +174,12 @@ class RecogGest(tk.Frame):
         self.controller = controller
         
 
-        p = PhotoImage(file="bg.png")
-        p['width'] = self.winfo_screenwidth()-100
-        p['height'] = self.winfo_screenheight()+1990
+        # p = PhotoImage(file="bg.png")
+        # p['width'] = self.winfo_screenwidth()-100
+        # p['height'] = self.winfo_screenheight()+1990
 
 
-        l = Label(self, image=p, background="white")
+        l = Label(self, background="white")
         l.pack(fill=BOTH, expand=YES)
         l.place(x=0, y=-50, width=self.winfo_screenwidth(), height=self.winfo_screenheight(), anchor="nw")
 
@@ -273,14 +277,28 @@ class PageTwo(tk.Frame):
                            command=lambda: controller.show_frame(StartPage))
         button.pack()
 
+ 
 
 if __name__ == "__main__":
+    command = sys.argv[2]
+    com_port = sys.argv[1]
+    try:
+        server = sys.argv[3]
+    except:
+        server = "ws://localhost:5000/echo"
+
+    init_GRS(com_port, server)
+    init_server(server)
+
     app = SampleApp()
 
     def onExit():
                 exitFlag = 0
                 print "exited"
                 app.destroy()
+                stop_server_conn()
+                stop_serial_conn()
+
     app.protocol('WM_DELETE_WINDOW', onExit) 
 
     app.mainloop()
